@@ -2,6 +2,7 @@ const express = require('express');
 const session = require('express-session');
 const passport = require('passport');
 const strategy = require('./strategy');
+const request = require('request');
 
 const app = express();
 
@@ -26,7 +27,22 @@ passport.deserializeUser(function(obj, done) {
   done(null, obj);
 })
 
-app.get('/login', passport.authenticate('auth0'));
+app.get('/login', passport.authenticate('auth0', {
+  successRedirect: '/followers',
+  failureRedirect: '/login',
+  failureFlash: true,
+  connection: 'github'
+}));
+
+app.get('/followers', function(req, res){
+  if(req.user){
+    request(req.user.followers_url, function(error, response, body){
+      res.status(response.statusCode).send(body);
+    })
+  } else {
+    req.redirect('/login');
+  }
+})
 
 
 const port = 3000;
